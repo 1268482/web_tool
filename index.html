@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      console.error("Uncaught error:", message, "Source:", source, "Line:", lineno, "Column:", colno, "Error object:", error);
+    };
+  </script>
+  <title>SPS Level Studio v1.1 - Strategy Game Level Editor</title>
+  <!-- Google Fonts: Outfit (headings) & Inter (UI text) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Main Application Wrapper -->
+  <div id="app" class="app-container">
+    
+    <!-- Top Menu / Toolbar -->
+    <header class="top-bar">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+            <path d="M12 6v6l4 2"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <h1>SPS Level Studio v1.1</h1>
+          <span class="logo-subtitle">Strategy Editor</span>
+        </div>
+      </div>
+
+      <!-- Quick Actions Toolbar -->
+      <div class="action-toolbar">
+        <button id="btn-new" class="btn-action" title="New Level">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="12" y1="18" x2="12" y2="12"/>
+            <line x1="9" y1="15" x2="15" y2="15"/>
+          </svg>
+          <span>New</span>
+        </button>
+
+        <button id="btn-clear" class="btn-action" title="Clear Grid">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            <line x1="10" y1="11" x2="10" y2="17"/>
+            <line x1="14" y1="11" x2="14" y2="17"/>
+          </svg>
+          <span>Clear</span>
+        </button>
+
+        <div class="divider"></div>
+
+        <button id="btn-undo" class="btn-action" title="Undo (Ctrl+Z)" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7v6h6"/>
+            <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
+          </svg>
+          <span>Undo</span>
+        </button>
+
+        <button id="btn-redo" class="btn-action" title="Redo (Ctrl+Y)" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="21 7 21 13 15 13"/>
+            <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/>
+          </svg>
+          <span>Redo</span>
+        </button>
+
+        <div class="divider"></div>
+
+        <button id="btn-save" class="btn-action btn-primary" title="Save Draft">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          <span>Save</span>
+        </button>
+
+        <button id="btn-load" class="btn-action" title="Load Draft">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span>Load</span>
+        </button>
+
+        <div class="divider"></div>
+
+        <button id="btn-export" class="btn-action" title="Export Level as JSON">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <span>Export</span>
+        </button>
+
+        <button id="btn-import-trigger" class="btn-action" title="Import Level from JSON">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span>Import</span>
+        </button>
+        <input type="file" id="file-import" accept=".json" style="display: none;">
+      </div>
+    </header>
+
+    <!-- Main Workspace Layout -->
+    <main class="editor-workspace">
+      
+      <!-- Left Sidebar: Tools & Palette -->
+      <aside class="left-sidebar">
+        <div class="sidebar-header">
+          <h2>Toolbox</h2>
+          <span class="sub-header">Select a tool to place or edit</span>
+        </div>
+
+        <div class="tool-groups">
+          <!-- House Section -->
+          <div class="tool-group">
+            <div class="group-title">Houses (Max 3)</div>
+            <div class="tool-grid">
+              <button class="btn-tool" data-tool="house1" draggable="true" title="Place House 1 (Red)">
+                <div class="tool-icon house-icon h1-theme">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                  </svg>
+                </div>
+                <span class="tool-label">House 1</span>
+                <span class="badge red">H1</span>
+              </button>
+
+              <button class="btn-tool" data-tool="house2" draggable="true" title="Place House 2 (Green)">
+                <div class="tool-icon house-icon h2-theme">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                  </svg>
+                </div>
+                <span class="tool-label">House 2</span>
+                <span class="badge green">H2</span>
+              </button>
+
+              <button class="btn-tool" data-tool="house3" draggable="true" title="Place House 3 (Purple)">
+                <div class="tool-icon house-icon h3-theme">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                  </svg>
+                </div>
+                <span class="tool-label">House 3</span>
+                <span class="badge purple">H3</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Objects Section -->
+          <div class="tool-group">
+            <div class="group-title">Objects</div>
+            <div class="tool-grid">
+              <button class="btn-tool" data-tool="stone" draggable="true" title="Place Stone (Gray)">
+                <div class="tool-icon stone-icon">
+                  <!-- Custom Rock/Stone SVG -->
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5">
+                    <path d="M12 2c-3.1 0-5.8 1.9-6.7 4.7C4.1 7.2 3 8.9 3 11c0 1.6.7 3 1.9 3.9C4.3 16 5 18 6.5 19.3c1.4.9 3.1 1.7 5.5 1.7 2.2 0 4.1-.7 5.5-1.7 1.4-1.3 2.1-3.3 1.6-4.4 1.2-.9 1.9-2.3 1.9-3.9 0-2.1-1.1-3.8-2.3-4.3-.9-2.8-3.6-4.7-6.7-4.7z"/>
+                  </svg>
+                </div>
+                <span class="tool-label">Stone</span>
+              </button>
+
+              <button class="btn-tool" data-tool="paper" draggable="true" title="Place Paper (White)">
+                <div class="tool-icon paper-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                  </svg>
+                </div>
+                <span class="tool-label">Paper</span>
+              </button>
+
+              <button class="btn-tool" data-tool="scissor" draggable="true" title="Place Scissor (Blue)">
+                <div class="tool-icon scissor-icon">
+                  <!-- Beautiful Scissor SVG -->
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="6" cy="6" r="3"/>
+                    <circle cx="6" cy="18" r="3"/>
+                    <line x1="9.8" y1="8.2" x2="20" y2="17"/>
+                    <line x1="17" y1="7" x2="8" y2="15.2"/>
+                  </svg>
+                </div>
+                <span class="tool-label">Scissor</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Utility & Movement Section -->
+          <div class="tool-group">
+            <div class="group-title">Editor Tools</div>
+            <div class="tool-grid">
+              <button class="btn-tool active" data-tool="select" title="Select and Inspect Element (S)">
+                <div class="tool-icon select-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 10 22 3 15 22 11 13 3 10"/>
+                  </svg>
+                </div>
+                <span class="tool-label">Select</span>
+              </button>
+
+              <button class="btn-tool" data-tool="letter" title="Place Custom Character/Label (T)">
+                <div class="tool-icon letter-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="4 7 4 4 20 4 20 7"/>
+                    <line x1="9" y1="20" x2="15" y2="20"/>
+                    <line x1="12" y1="4" x2="12" y2="20"/>
+                  </svg>
+                </div>
+                <span class="tool-label">Letter Tool</span>
+              </button>
+
+              <button class="btn-tool" data-tool="eraser" title="Erase Grid Element (E)">
+                <div class="tool-icon eraser-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 20H7L3 16C2 15 2 13 3 12L13 2L22 11L20 20Z"/>
+                    <line x1="6" y1="11" x2="15" y2="20"/>
+                  </svg>
+                </div>
+                <span class="tool-label">Eraser</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Move Modifiers Section -->
+          <div class="tool-group">
+            <div class="group-title">Movement Physics</div>
+            <div class="tool-grid">
+              <button class="btn-tool move-mod" data-tool="move1" title="Move Exactly 1 Cell">
+                <div class="tool-icon move-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="18 8 22 12 18 16"/>
+                    <polyline points="6 8 2 12 6 16"/>
+                    <line x1="2" y1="12" x2="22" y2="12"/>
+                  </svg>
+                </div>
+                <span class="tool-label">Move 1</span>
+              </button>
+
+              <button class="btn-tool move-mod" data-tool="move2" title="Move Exactly 2 Cells">
+                <div class="tool-icon move-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="17 11 21 15 17 19"/>
+                    <polyline points="7 11 3 15 7 19"/>
+                    <line x1="3" y1="15" x2="21" y2="15"/>
+                    <circle cx="12" cy="15" r="1.5" fill="currentColor"/>
+                  </svg>
+                </div>
+                <span class="tool-label">Move 2</span>
+              </button>
+
+              <button class="btn-tool move-mod" data-tool="move3" title="Move Exactly 3 Cells">
+                <div class="tool-icon move-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="17 11 21 15 17 19"/>
+                    <polyline points="7 11 3 15 7 19"/>
+                    <line x1="3" y1="15" x2="21" y2="15"/>
+                    <circle cx="9" cy="15" r="1" fill="currentColor"/>
+                    <circle cx="15" cy="15" r="1" fill="currentColor"/>
+                  </svg>
+                </div>
+                <span class="tool-label">Move 3</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="keyboard-helper">
+          <div class="helper-title">Keyboard Shortcuts</div>
+          <div class="helper-content">
+            <p><kbd>S</kbd> Select Tool</p>
+            <p><kbd>E</kbd> / <kbd>Del</kbd> Eraser</p>
+            <p><kbd>T</kbd> Letter Tool</p>
+            <p><kbd>R</kbd> / <kbd>P</kbd> / <kbd>C</kbd> Stone/Paper/Scissor</p>
+            <p><kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd> Houses 1-3</p>
+            <p><kbd>Ctrl+Z</kbd> Undo</p>
+            <p><kbd>Ctrl+Y</kbd> Redo</p>
+            <p><kbd>Esc</kbd> Reset Active Tool</p>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Center Content: Grid Area -->
+      <section class="canvas-area">
+        <div class="canvas-container">
+          
+          <!-- Outer Grid with column coordinates (A-J) and row coordinates (1-10) -->
+          <div class="editor-grid-container">
+            
+            <!-- Column Coordinates Top (Empty corner cell + A-J) -->
+            <div class="col-headers">
+              <div class="corner-header"></div>
+              <div class="col-header">A</div>
+              <div class="col-header">B</div>
+              <div class="col-header">C</div>
+              <div class="col-header">D</div>
+              <div class="col-header">E</div>
+              <div class="col-header">F</div>
+              <div class="col-header">G</div>
+              <div class="col-header">H</div>
+              <div class="col-header">I</div>
+              <div class="col-header">J</div>
+            </div>
+
+            <div class="grid-content-row">
+              <!-- Row Coordinates Left (1-10) -->
+              <div class="row-headers">
+                <div class="row-header">1</div>
+                <div class="row-header">2</div>
+                <div class="row-header">3</div>
+                <div class="row-header">4</div>
+                <div class="row-header">5</div>
+                <div class="row-header">6</div>
+                <div class="row-header">7</div>
+                <div class="row-header">8</div>
+                <div class="row-header">9</div>
+                <div class="row-header">10</div>
+              </div>
+
+              <!-- Interactive 10x10 Grid -->
+              <div id="editor-grid" class="editor-grid">
+                <!-- Javascript will generate 100 cells dynamically here -->
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </section>
+
+      <!-- Right Sidebar: Properties & Settings -->
+      <aside class="right-sidebar">
+        
+        <!-- Panel 1: Selected Object Properties -->
+        <div class="properties-section">
+          <div class="sidebar-header border-bottom">
+            <h2>Properties</h2>
+            <span class="sub-header">Inspect and tweak selected cell</span>
+          </div>
+
+          <!-- Empty State (No selection) -->
+          <div id="props-empty-state" class="empty-state">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="muted-icon">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <p>Select any cell on the grid to view and modify its properties.</p>
+          </div>
+
+          <!-- Populated Properties State (Hidden by default) -->
+          <div id="props-active-state" class="props-form" style="display: none;">
+            <div class="form-group row-inline">
+              <label>Coordinates</label>
+              <div id="prop-coord" class="coord-indicator">D4</div>
+            </div>
+
+            <div class="form-group">
+              <label for="prop-type">Object Type</label>
+              <select id="prop-type">
+                <option value="none">None (Empty)</option>
+                <option value="stone">Stone</option>
+                <option value="paper">Paper</option>
+                <option value="scissor">Scissor</option>
+                <option value="house1">House 1</option>
+                <option value="house2">House 2</option>
+                <option value="house3">House 3</option>
+                <option value="letter">Letter Tool Label</option>
+              </select>
+            </div>
+
+            <!-- Contextual House Setting: Assigned object -->
+            <div id="prop-house-binding-container" class="form-group" style="display: none;">
+              <label for="prop-house-binding">Assigned Object</label>
+              <select id="prop-house-binding">
+                <option value="none">None</option>
+                <option value="stone">Stone (Rock)</option>
+                <option value="paper">Paper (Document)</option>
+                <option value="scissor">Scissor (Clippers)</option>
+              </select>
+            </div>
+
+            <!-- Contextual Letter Setting: Text value -->
+            <div id="prop-letter-text-container" class="form-group" style="display: none;">
+              <label for="prop-letter-text">Cell Label Text</label>
+              <input type="text" id="prop-letter-text" maxlength="8" placeholder="e.g. Start">
+            </div>
+
+            <!-- Contextual Physics Setting: Move value -->
+            <div id="prop-move-container" class="form-group">
+              <label for="prop-move-val">Movement Range</label>
+              <select id="prop-move-val">
+                <option value="0">0 (Immobile)</option>
+                <option value="1">1 Cell</option>
+                <option value="2">2 Cells</option>
+                <option value="3">3 Cells</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="prop-meta">Custom Metadata (JSON)</label>
+              <textarea id="prop-meta" rows="3" placeholder='{"key": "value"}'></textarea>
+              <span class="field-help">Optional JSON structure for level scripting</span>
+            </div>
+
+            <div class="action-buttons-group">
+              <button id="btn-prop-apply" class="btn-primary-sm">Apply Changes</button>
+              <button id="btn-prop-delete" class="btn-danger-sm">Delete Element</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 2: Global Level Settings -->
+        <div class="properties-section level-settings-section">
+          <div class="sidebar-header border-bottom">
+            <h2>Level Settings</h2>
+            <span class="sub-header">Global level configuration</span>
+          </div>
+
+          <div class="props-form">
+            <div class="form-group">
+              <label for="level-name">Level Name</label>
+              <input type="text" id="level-name" placeholder="Custom Level 1" value="My Epic Level">
+            </div>
+
+            <div class="form-group">
+              <label for="level-difficulty">Difficulty</label>
+              <select id="level-difficulty">
+                <option value="Easy">Easy</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="Hard">Hard</option>
+                <option value="Expert">Expert</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="level-desc">Description</label>
+              <textarea id="level-desc" rows="3" placeholder="Briefly describe the strategy goals..."></textarea>
+            </div>
+          </div>
+        </div>
+
+      </aside>
+    </main>
+  </div>
+
+  <script src="app_v3.js"></script>
+</body>
+</html>

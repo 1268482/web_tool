@@ -1,0 +1,910 @@
+/* ==========================================================================
+   SPS LEVEL STUDIO - PROFESSIONAL DESIGN SYSTEM & STYLE SHEET
+   ========================================================================== */
+
+/* --- 1. DESIGN TOKENS & SYSTEM VARIABLES --- */
+:root {
+  /* Color Palette (Harmonious Light Theme with Pastel Accents) */
+  --bg-primary: #f6f8fb;       /* Soft warm-white background */
+  --bg-secondary: #ffffff;     /* Pure white for panels & containers */
+  --bg-tertiary: #f1f4f8;      /* Warm gray for coordinates, hover borders */
+  
+  --border-light: #e2e8f0;     /* Slate border color */
+  --border-medium: #cbd5e1;    /* Slate-400 */
+  --border-focus: #3b82f6;     /* Primary blue focus highlight */
+  
+  --text-primary: #0f172a;     /* Deep charcoal/navy for maximum readability */
+  --text-secondary: #475569;   /* Slate grey for descriptions & secondary text */
+  --text-muted: #94a3b8;       /* Slate-400 for helper/disabled items */
+
+  /* Pastel Accent Colors */
+  --accent-blue: #3b82f6;      /* Primary system blue */
+  --accent-blue-pastel: #eff6ff;
+  
+  --house1-red: #f43f5e;       /* House 1 Soft Red */
+  --house1-pastel: #fff1f2;
+  
+  --house2-green: #10b981;     /* House 2 Soft Green */
+  --house2-pastel: #ecfdf5;
+  
+  --house3-purple: #8b5cf6;    /* House 3 Soft Purple */
+  --house3-pastel: #f5f3ff;
+  
+  --stone-gray: #64748b;       /* Stone Slate Gray */
+  --stone-pastel: #f8fafc;
+  
+  --paper-white: #ffffff;      /* Paper pure white */
+  --paper-pastel: #fafafa;
+  
+  --scissor-blue: #0ea5e9;     /* Scissors soft electric blue */
+  --scissor-pastel: #f0f9ff;
+  
+  /* Shadows & Glassmorphism */
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.07), 0 4px 6px -4px rgba(15, 23, 42, 0.05);
+  --shadow-glow: 0 0 14px rgba(59, 130, 246, 0.35);
+  
+  /* Animation Speeds */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Layout dimensions */
+  --header-height: 70px;
+  --sidebar-left-width: 290px;
+  --sidebar-right-width: 320px;
+}
+
+/* --- 2. GLOBAL RESET & BASE RULES --- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  overflow: hidden;
+  height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  outline: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+/* --- 3. LAYOUT STRUCTURE --- */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* --- 4. TOP MENU / HEADER --- */
+.top-bar {
+  height: var(--header-height);
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  user-select: none;
+}
+
+.logo-icon {
+  background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+  color: #ffffff;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.25);
+  animation: logo-spin 1.5s ease-out;
+}
+
+.logo-text h1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+  line-height: 1.1;
+}
+
+.logo-subtitle {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.action-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: var(--transition-fast);
+}
+
+.btn-action svg {
+  color: var(--text-secondary);
+  transition: var(--transition-fast);
+}
+
+.btn-action:hover:not(:disabled) {
+  background-color: #cbd5e120;
+  border-color: var(--border-medium);
+  color: var(--text-primary);
+}
+
+.btn-action:hover:not(:disabled) svg {
+  color: var(--text-primary);
+}
+
+.btn-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-action.btn-primary {
+  background-color: var(--accent-blue);
+  border-color: var(--accent-blue);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.15);
+}
+
+.btn-action.btn-primary svg {
+  color: #ffffff;
+}
+
+.btn-action.btn-primary:hover:not(:disabled) {
+  background-color: #2563eb;
+  border-color: #2563eb;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.25);
+}
+
+.action-toolbar .divider {
+  width: 1px;
+  height: 24px;
+  background-color: var(--border-light);
+  margin: 0 6px;
+}
+
+/* --- 5. WORKSPACE CONTAINER --- */
+.editor-workspace {
+  display: flex;
+  flex: 1;
+  height: calc(100vh - var(--header-height));
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* --- 6. LEFT SIDEBAR: TOOLBOX --- */
+.left-sidebar {
+  width: var(--sidebar-left-width);
+  background-color: var(--bg-secondary);
+  border-right: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
+  gap: 20px;
+}
+
+.sidebar-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.sidebar-header h2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.sidebar-header .sub-header {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.tool-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tool-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.group-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.8px;
+  margin-bottom: 2px;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.btn-tool {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 10px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  position: relative;
+  transition: var(--transition-normal);
+  user-select: none;
+}
+
+.btn-tool:hover {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-medium);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-tool:active {
+  transform: translateY(0);
+}
+
+/* Active Tool Highlight */
+.btn-tool.active {
+  background-color: var(--accent-blue-pastel);
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.btn-tool.active .tool-icon {
+  background-color: #3b82f61a;
+  border-color: var(--accent-blue);
+}
+
+.tool-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-light);
+  background-color: var(--bg-secondary);
+  transition: var(--transition-normal);
+}
+
+.tool-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.btn-tool.active .tool-label {
+  color: var(--accent-blue);
+}
+
+/* Badges for House Icons */
+.btn-tool .badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.badge.red { background-color: var(--house1-pastel); color: var(--house1-red); border: 1.5px solid #f43f5e30; }
+.badge.green { background-color: var(--house2-pastel); color: var(--house2-green); border: 1.5px solid #10b98130; }
+.badge.purple { background-color: var(--house3-pastel); color: var(--house3-purple); border: 1.5px solid #8b5cf630; }
+
+/* Custom Colors for Icons */
+.house-icon.h1-theme svg { color: var(--house1-red); }
+.house-icon.h2-theme svg { color: var(--house2-green); }
+.house-icon.h3-theme svg { color: var(--house3-purple); }
+
+.stone-icon svg { color: var(--stone-gray); fill: #64748b20; }
+.paper-icon svg { color: var(--text-secondary); }
+.scissor-icon svg { color: var(--scissor-blue); }
+
+.select-icon svg { color: var(--text-primary); }
+.letter-icon svg { color: var(--text-secondary); }
+.eraser-icon svg { color: #ef4444; }
+.move-icon svg { color: #f59e0b; }
+
+/* Keyboard Shortcuts Helper Panel */
+.keyboard-helper {
+  margin-top: auto;
+  border-top: 1px solid var(--border-light);
+  padding-top: 14px;
+}
+
+.helper-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.helper-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.helper-content p {
+  font-size: 11px;
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+kbd {
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-medium);
+  border-radius: 4px;
+  padding: 1px 5px;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.1);
+  color: var(--text-primary);
+}
+
+/* --- 7. CENTER CANVAS: GAME GRID --- */
+.canvas-area {
+  flex: 1;
+  background-color: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 30px;
+}
+
+.canvas-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-secondary);
+  padding: 40px;
+  border-radius: 24px;
+  box-shadow: var(--shadow-lg);
+  border: 1.5px solid var(--border-light);
+}
+
+.editor-grid-container {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Coordinate Headers */
+.col-headers {
+  display: flex;
+}
+
+.corner-header {
+  width: 44px; /* Matches vertical row label size */
+  height: 38px;
+}
+
+.col-header {
+  width: 60px; /* Matches cell size */
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.grid-content-row {
+  display: flex;
+}
+
+.row-headers {
+  display: flex;
+  flex-direction: column;
+}
+
+.row-header {
+  width: 44px;
+  height: 60px; /* Matches cell size */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+/* Actual Grid */
+.editor-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 60px);
+  grid-template-rows: repeat(10, 60px);
+  gap: 2.5px;
+  background-color: var(--border-light);
+  border: 2.5px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+/* Grid Cells */
+.grid-cell {
+  background-color: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color var(--transition-fast), transform var(--transition-fast), border var(--transition-fast);
+}
+
+.grid-cell:hover {
+  background-color: var(--bg-primary);
+  z-index: 5;
+}
+
+/* Coordinates in cell tooltip or visual cues */
+.grid-cell::after {
+  content: attr(data-coord);
+  position: absolute;
+  bottom: 2px;
+  right: 3px;
+  font-size: 8px;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: var(--transition-fast);
+  pointer-events: none;
+}
+
+.grid-cell:hover::after {
+  opacity: 0.7;
+}
+
+/* Cell Selection Aura */
+.grid-cell.selected {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: -2px;
+  background-color: var(--accent-blue-pastel) !important;
+  z-index: 10;
+}
+
+/* --- 8. PLACED GAME OBJECT DESIGN --- */
+.placed-object {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: scale-up 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  pointer-events: none; /* Let events fall through to cell */
+}
+
+/* Stone Element Visual styling */
+.placed-object.obj-stone {
+  color: var(--stone-gray);
+}
+.placed-object.obj-stone svg {
+  filter: drop-shadow(0 2px 4px rgba(100, 116, 139, 0.25));
+}
+
+/* Paper Element Visual styling */
+.placed-object.obj-paper {
+  color: var(--text-secondary);
+}
+.placed-object.obj-paper svg {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.06));
+}
+
+/* Scissor Element Visual styling */
+.placed-object.obj-scissor {
+  color: var(--scissor-blue);
+}
+.placed-object.obj-scissor svg {
+  filter: drop-shadow(0 2px 4px rgba(14, 165, 233, 0.25));
+}
+
+/* House Placed Elements */
+.placed-object.obj-house1 { background-color: var(--house1-pastel); color: var(--house1-red); }
+.placed-object.obj-house2 { background-color: var(--house2-pastel); color: var(--house2-green); }
+.placed-object.obj-house3 { background-color: var(--house3-pastel); color: var(--house3-purple); }
+
+.placed-object[class*="obj-house"] {
+  border-radius: 4px;
+  position: relative;
+}
+
+.house-label {
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 1px 3px;
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.obj-house1 .house-label { background-color: var(--house1-red); color: #ffffff; }
+.obj-house2 .house-label { background-color: var(--house2-green); color: #ffffff; }
+.obj-house3 .house-label { background-color: var(--house3-purple); color: #ffffff; }
+
+/* Sub-binding indicator for Houses */
+.house-binding-dot {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid #ffffff;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.house-binding-dot.bind-stone { background-color: var(--stone-gray); }
+.house-binding-dot.bind-paper { background-color: #cbd5e1; }
+.house-binding-dot.bind-scissor { background-color: var(--scissor-blue); }
+
+/* Placed Letter Tool Label elements */
+.placed-object.obj-letter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px dashed var(--border-medium);
+  border-radius: 4px;
+  width: 90%;
+  height: 90%;
+}
+
+/* Movable Range Multipliers Indicators (Tiny Badge in cells) */
+.move-range-indicator {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background-color: #f59e0b;
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 800;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* --- 9. MOVEMENT GLOW INDICATORS --- */
+.grid-cell.valid-move-target {
+  position: relative;
+  z-index: 10;
+}
+
+.grid-cell.valid-move-target::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid #f59e0b;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.45);
+  background-color: rgba(245, 158, 11, 0.05);
+  animation: move-glow 1.2s infinite ease-in-out;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.grid-cell.valid-move-target:hover::before {
+  border-color: #f59e0b;
+  background-color: rgba(245, 158, 11, 0.15);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.65);
+}
+
+/* --- 10. DRAG AND DROP VISUALS --- */
+.grid-cell.drag-over {
+  background-color: rgba(59, 130, 246, 0.08) !important;
+  outline: 2px dashed var(--accent-blue);
+  outline-offset: -2px;
+}
+
+/* --- 11. RIGHT SIDEBAR: PROPERTIES PANEL --- */
+.right-sidebar {
+  width: var(--sidebar-right-width);
+  background-color: var(--bg-secondary);
+  border-left: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  box-shadow: var(--shadow-sm);
+  padding: 0;
+}
+
+.properties-section {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.border-bottom {
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 10px;
+  color: var(--text-muted);
+}
+
+.muted-icon {
+  color: #cbd5e1;
+  margin-bottom: 12px;
+}
+
+.empty-state p {
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.props-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fade-in 0.25s ease-out forwards;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group.row-inline {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--border-light);
+  margin-bottom: 4px;
+}
+
+.form-group label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.coord-indicator {
+  font-family: 'Outfit', sans-serif;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-light);
+}
+
+.form-group select,
+.form-group input[type="text"],
+.form-group textarea {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--text-primary);
+  transition: var(--transition-fast);
+  width: 100%;
+}
+
+.form-group select:focus,
+.form-group input[type="text"]:focus,
+.form-group textarea:focus {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.form-group textarea {
+  resize: vertical;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.field-help {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.action-buttons-group {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn-primary-sm, .btn-danger-sm {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  transition: var(--transition-fast);
+}
+
+.btn-primary-sm {
+  background-color: var(--accent-blue);
+  color: #ffffff;
+  border: 1px solid var(--accent-blue);
+}
+
+.btn-primary-sm:hover {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.btn-danger-sm {
+  background-color: #fee2e2;
+  color: #ef4444;
+  border: 1px solid #fee2e2;
+}
+
+.btn-danger-sm:hover {
+  background-color: #fca5a5;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+.level-settings-section {
+  border-top: 1px solid var(--border-light);
+  margin-top: 12px;
+}
+
+/* --- 12. ANIMATION KEYFRAMES --- */
+@keyframes logo-spin {
+  0% { transform: scale(0.6) rotate(-45deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+@keyframes scale-up {
+  0% { transform: scale(0.4); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes move-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+    opacity: 0.9;
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.7);
+    opacity: 1;
+  }
+}
+
+/* --- 13. MODERN SCROLLBAR CUSTOMIZATION --- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--stone-gray);
+}
+
+/* --- 14. INLINE CELL INPUT EDITING --- */
+.inline-cell-input {
+  width: 90%;
+  height: 90%;
+  border: 2px solid var(--accent-blue) !important;
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  text-align: center !important;
+  border-radius: 4px;
+  padding: 0 !important;
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.2) !important;
+  outline: none !important;
+  z-index: 20;
+  pointer-events: auto !important;
+}
+
