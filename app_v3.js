@@ -6,12 +6,13 @@
 class SPSLevelEditor {
   constructor() {
     // 1. Initial State
-    this.gridSize = 10;
+    this.gridSize = 10; // Default grid size (NxN), max 26 (A-Z)
     this.gridData = {}; // Format: { "C3": { type: "stone", moveValue: 1, text: "", assignedObject: "none", metadata: {} } }
     
     this.activeTool = 'select'; // 'select', 'stone', 'paper', 'scissor', 'house1', 'house2', 'house3', 'letter', 'eraser', 'move1', 'move2', 'move3'
     this.multiSelectMode = false; // toggle for multi-select
     this.selectedTiles = new Set(); // store selected coordinates
+    this._multiSelectMouseDownCoord = null; // track mousedown so click doesn't double-fire
     this.selectedCellCoord = null;
     this.clipboardData = null; // Copy-paste clipboard buffer
     
@@ -89,19 +90,27 @@ class SPSLevelEditor {
 
   init() {
     this.generateGridDOM();
+    this.updateGridHeaders();
     this.setupEventListeners();
     this.saveHistoryState(); // Initial baseline undo point
     this.loadFromLocalStorage(true); // Load saved work if exists
   }
 
+  // --- COLUMN LABEL HELPER (A-Z for up to 26 columns) ---
+  getColLabel(colIndex) {
+    return String.fromCharCode(65 + colIndex); // 0->'A', 1->'B', ..., 25->'Z'
+  }
+
   // --- GRID CREATION ---
   generateGridDOM() {
     this.dom.grid.innerHTML = '';
-    const cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+
+    // Update CSS grid-template-columns dynamically
+    this.dom.grid.style.gridTemplateColumns = `repeat(${this.gridSize}, 54px)`;
 
     for (let r = 1; r <= this.gridSize; r++) {
       for (let c = 0; c < this.gridSize; c++) {
-        const coord = `${cols[c]}${r}`;
+        const coord = `${this.getColLabel(c)}${r}`;
         const cell = document.createElement('div');
         cell.className = 'grid-cell';
         cell.setAttribute('data-coord', coord);
@@ -114,6 +123,80 @@ class SPSLevelEditor {
         this.dom.grid.appendChild(cell);
       }
     }
+  }
+
+  // --- COLUMN & ROW HEADER UPDATE ---
+  updateGridHeaders() {
+    // Update column headers (A, B, C...)
+    const colHeadersEl = document.querySelector('.col-headers');
+    if (colHeadersEl) {
+      colHeadersEl.innerHTML = '';
+      // Corner spacer
+      const corner = document.createElement('div');
+      corner.className = 'corner-header';
+      colHeadersEl.appendChild(corner);
+      // Col labels
+      for (let c = 0; c < this.gridSize; c++) {
+        const h = document.createElement('div');
+        h.className = 'col-header';
+        h.textContent = this.getColLabel(c);
+        colHeadersEl.appendChild(h);
+      }
+    }
+
+    // Update row headers (1, 2, 3...)
+    const rowHeadersEl = document.querySelector('.row-headers');
+    if (rowHeadersEl) {
+      rowHeadersEl.innerHTML = '';
+      for (let r = 1; r <= this.gridSize; r++) {
+        const h = document.createElement('div');
+        h.className = 'row-header';
+        h.textContent = r;
+        rowHeadersEl.appendChild(h);
+      }
+    }
+
+    // Update the grid-size input to reflect current value
+    const sizeInput = document.getElementById('grid-size-input');
+    if (sizeInput) sizeInput.value = this.gridSize;
+  }
+
+  // --- GRID RESIZE HANDLER ---
+  resizeGrid(newSize) {
+    const size = Math.max(2, Math.min(26, parseInt(newSize) || 10));
+    if (size === this.gridSize) return;
+
+    const confirmMsg = `Resize grid to ${size}x${size}? Elements outside the new boundaries will be removed.`;
+    if (!confirm(confirmMsg)) {
+      // Reset the input to current size
+      const sizeInput = document.getElementById('grid-size-input');
+      if (sizeInput) sizeInput.value = this.gridSize;
+      return;
+    }
+
+    this.saveHistoryState();
+    this.gridSize = size;
+
+    // Prune gridData entries that fall outside new bounds
+    const newGridData = {};
+    Object.entries(this.gridData).forEach(([coord, val]) => {
+      const colChar = coord[0];
+      const rowNum = parseInt(coord.slice(1));
+      const colIdx = colChar.charCodeAt(0) - 65;
+      if (colIdx < size && rowNum <= size) {
+        newGridData[coord] = val;
+      }
+    });
+    this.gridData = newGridData;
+
+    this.clearSelection();
+    this.selectedCellCoord = null;
+    this.clearPropertiesPanel();
+    this.updateGridHeaders();
+    this.generateGridDOM();
+
+    // Re-render all remaining cells
+    Object.keys(this.gridData).forEach(coord => this.renderCell(coord));
   }
 
   // --- EVENT BINDINGS ---
@@ -141,11 +224,13 @@ class SPSLevelEditor {
     // Paint / Drag Selection / Placement handlers
     this.isMouseDown = false;
     this.hasSavedHistoryForDrag = false;
+    this._didDrag = false; // track if a drag occurred so click doesn't re-fire selection
 
     this.dom.grid.addEventListener('mousedown', (e) => {
       const cell = e.target.closest('.grid-cell');
       if (!cell) return;
       this.isMouseDown = true;
+      this._didDrag = false;
       this.handleCellMouseDown(cell, e);
     });
 
@@ -153,6 +238,7 @@ class SPSLevelEditor {
       const cell = e.target.closest('.grid-cell');
       if (!cell) return;
       if (this.isMouseDown) {
+        this._didDrag = true;
         this.handleCellMouseDragOver(cell, e);
       }
     });
@@ -161,10 +247,13 @@ class SPSLevelEditor {
       this.isMouseDown = false;
     });
 
-    // Grid Cell Click Actions
+    // Grid Cell Click Actions — skip if mousedown already handled the action
     this.dom.grid.addEventListener('click', (e) => {
       const cell = e.target.closest('.grid-cell');
       if (!cell) return;
+      // In multi-select / shift mode, mousedown already toggled the cell.
+      // Only let click proceed for normal (non-multi) tool actions.
+      if (this.multiSelectMode || e.shiftKey) return;
       this.handleCellClick(cell);
     });
 
@@ -185,6 +274,15 @@ class SPSLevelEditor {
     // JSON file Import trigger setup
     this.dom.btnImportTrigger.addEventListener('click', () => this.dom.fileImport.click());
     this.dom.fileImport.addEventListener('change', (e) => this.handleFileImport(e));
+
+    // Grid size input handler
+    const sizeInput = document.getElementById('grid-size-input');
+    if (sizeInput) {
+      sizeInput.value = this.gridSize;
+      sizeInput.addEventListener('change', (e) => {
+        this.resizeGrid(e.target.value);
+      });
+    }
 
     // Global Key Listener for shortcuts
     document.addEventListener('keydown', (e) => {
@@ -301,8 +399,7 @@ class SPSLevelEditor {
     if (btn) {
       if (this.multiSelectMode) {
         btn.classList.add('active');
-        // Unselect active tool if it's select to show active state on toggle
-        this.selectTool('select');
+        // Do NOT call selectTool here — it clears selectedTiles and selection state
       } else {
         btn.classList.remove('active');
         this.clearSelection();
@@ -315,6 +412,7 @@ class SPSLevelEditor {
     this.hasSavedHistoryForDrag = false;
 
     if (this.multiSelectMode || e.shiftKey) {
+      // Toggle selection state on mousedown. The click event will be suppressed for multi-select.
       if (this.selectedTiles.has(coord)) {
         this.selectedTiles.delete(coord);
         cell.classList.remove('selected');
@@ -339,6 +437,7 @@ class SPSLevelEditor {
     const coord = cell.getAttribute('data-coord');
 
     if (this.multiSelectMode || e.shiftKey) {
+      // Drag-paint selection (only adds, never removes during drag)
       if (!this.selectedTiles.has(coord)) {
         this.selectedTiles.add(coord);
         cell.classList.add('selected');
@@ -408,17 +507,8 @@ class SPSLevelEditor {
       return;
     }
 
-    // In multi-select mode (or shift clicked), handle click toggle selection
-    if (this.multiSelectMode) {
-      if (this.selectedTiles.has(coord)) {
-        this.selectedTiles.delete(coord);
-        cell.classList.remove('selected');
-      } else {
-        this.selectedTiles.add(coord);
-        cell.classList.add('selected');
-      }
-      return;
-    }
+    // Note: multi-select mode click is suppressed at the event listener level;
+    // all selection toggling happens in handleCellMouseDown to avoid double-firing.
 
     // Process toolbar tool placing actions
     if (this.activeTool === 'select') {
@@ -501,17 +591,15 @@ class SPSLevelEditor {
     
     // Directions offsets: Horizontal, Vertical, Diagonal directions
     const offsets = [
-      { r: 0, c: step },   // Right
-      { r: 0, c: -step },  // Left
-      { r: step, c: 0 },   // Down
-      { r: -step, c: 0 },  // Up
+      { r: 0, c: step },      // Right
+      { r: 0, c: -step },     // Left
+      { r: step, c: 0 },      // Down
+      { r: -step, c: 0 },     // Up
       { r: step, c: step },   // Down-Right
       { r: step, c: -step },  // Down-Left
       { r: -step, c: step },  // Up-Right
       { r: -step, c: -step }  // Up-Left
     ];
-
-    const cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
 
     offsets.forEach(offset => {
       const targetRow = startRow + offset.r;
@@ -519,7 +607,7 @@ class SPSLevelEditor {
 
       // Bounds validation
       if (targetRow >= 1 && targetRow <= this.gridSize && targetCol >= 0 && targetCol < this.gridSize) {
-        const targetCoord = `${cols[targetCol]}${targetRow}`;
+        const targetCoord = `${this.getColLabel(targetCol)}${targetRow}`;
         
         // Highlight destination in UI
         const targetCell = document.querySelector(`.grid-cell[data-coord="${targetCoord}"]`);
@@ -703,9 +791,8 @@ class SPSLevelEditor {
 
     // Refresh complete grid canvas rendering
     for (let r = 1; r <= this.gridSize; r++) {
-      const cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
       for (let c = 0; c < this.gridSize; c++) {
-        this.renderCell(`${cols[c]}${r}`);
+        this.renderCell(`${this.getColLabel(c)}${r}`);
       }
     }
 
@@ -763,15 +850,15 @@ class SPSLevelEditor {
 
   // --- PROPERTIES EDITOR PANEL CONTROLLERS ---
   selectCell(coord) {
-    // Clear previous cell selection outlines
-    document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove('selected'));
-    
-    // Preserve multi-select state if active
-    if (this.multiSelectMode) {
-      this.selectedTiles.add(coord);
-      const cell = document.querySelector(`.grid-cell[data-coord="${coord}"]`);
-      if (cell) cell.classList.add('selected');
-    } else {
+    // In multi-select mode, don't wipe all selections — just update properties panel
+    if (!this.multiSelectMode) {
+      // Clear previous single-cell selection outline only
+      document.querySelectorAll('.grid-cell').forEach(c => {
+        // Only remove 'selected' from cells not in selectedTiles (preserves multi-select highlights)
+        if (!this.selectedTiles.has(c.getAttribute('data-coord'))) {
+          c.classList.remove('selected');
+        }
+      });
       this.selectedCellCoord = coord;
       const cell = document.querySelector(`.grid-cell[data-coord="${coord}"]`);
       if (cell) cell.classList.add('selected');
@@ -921,9 +1008,8 @@ class SPSLevelEditor {
 
     // Clear UI Grid Canvas
     for (let r = 1; r <= this.gridSize; r++) {
-      const cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
       for (let c = 0; c < this.gridSize; c++) {
-        this.renderCell(`${cols[c]}${r}`);
+        this.renderCell(`${this.getColLabel(c)}${r}`);
       }
     }
 
@@ -940,9 +1026,8 @@ class SPSLevelEditor {
 
     // Clear Canvas visual cells
     for (let r = 1; r <= this.gridSize; r++) {
-      const cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
       for (let c = 0; c < this.gridSize; c++) {
-        this.renderCell(`${cols[c]}${r}`);
+        this.renderCell(`${this.getColLabel(c)}${r}`);
       }
     }
 
@@ -954,6 +1039,7 @@ class SPSLevelEditor {
       levelName: this.dom.levelName.value,
       difficulty: this.dom.levelDifficulty.value,
       description: this.dom.levelDesc.value,
+      gridSize: this.gridSize,
       grid: this.gridData
     };
 
@@ -999,12 +1085,17 @@ class SPSLevelEditor {
       this.dom.levelDesc.value = data.description || '';
       
       this.gridData = data.grid || {};
+      // Restore grid size if saved
+      if (data.gridSize && data.gridSize !== this.gridSize) {
+        this.gridSize = Math.max(2, Math.min(26, data.gridSize));
+        this.updateGridHeaders();
+        this.generateGridDOM();
+      }
 
       // Draw all elements on Canvas
       for (let r = 1; r <= this.gridSize; r++) {
-        const cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
         for (let c = 0; c < this.gridSize; c++) {
-          this.renderCell(`${cols[c]}${r}`);
+          this.renderCell(`${this.getColLabel(c)}${r}`);
         }
       }
 
@@ -1024,6 +1115,7 @@ class SPSLevelEditor {
       levelName: this.dom.levelName.value,
       difficulty: this.dom.levelDifficulty.value,
       description: this.dom.levelDesc.value,
+      gridSize: this.gridSize,
       grid: this.gridData
     };
 
@@ -1056,12 +1148,17 @@ class SPSLevelEditor {
         this.dom.levelDesc.value = data.description || '';
         
         this.gridData = data.grid || {};
+        // Restore grid size if present in imported JSON
+        if (data.gridSize && data.gridSize !== this.gridSize) {
+          this.gridSize = Math.max(2, Math.min(26, data.gridSize));
+          this.updateGridHeaders();
+          this.generateGridDOM();
+        }
 
         // Render Canvas
         for (let r = 1; r <= this.gridSize; r++) {
-          const cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
           for (let c = 0; c < this.gridSize; c++) {
-            this.renderCell(`${cols[c]}${r}`);
+            this.renderCell(`${this.getColLabel(c)}${r}`);
           }
         }
 
