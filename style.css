@@ -450,7 +450,8 @@ kbd {
 }
 
 .col-header {
-  width: 60px; /* Matches cell size */
+  min-width: 44px; /* min matches row label width */
+  flex: 1;
   height: 38px;
   display: flex;
   align-items: center;
@@ -473,7 +474,9 @@ kbd {
 
 .row-header {
   width: 44px;
-  height: 60px; /* Matches cell size */
+  height: 54px; /* Must match grid-auto-rows: 54px */
+  min-height: 54px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -487,8 +490,8 @@ kbd {
 /* Actual Grid */
 .editor-grid {
   display: grid;
-  grid-template-columns: repeat(10, 60px);
-  grid-template-rows: repeat(10, 60px);
+  /* grid-template-columns is set dynamically by JS via style.gridTemplateColumns */
+  grid-auto-rows: 54px;
   gap: 2.5px;
   background-color: var(--border-light);
   border: 2.5px solid var(--border-light);
@@ -506,6 +509,9 @@ kbd {
   position: relative;
   cursor: pointer;
   user-select: none;
+  min-width: 44px;
+  min-height: 44px;
+  height: 54px;
   transition: background-color var(--transition-fast), transform var(--transition-fast), border var(--transition-fast);
 }
 
@@ -910,3 +916,32 @@ kbd {
   pointer-events: auto !important;
 }
 
+/* Grid Size Control (in Level Settings panel) */
+.grid-size-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.grid-size-control input[type="number"] {
+  width: 70px;
+  padding: 6px 10px;
+  border: 1.5px solid var(--border-light);
+  border-radius: 8px;
+  background-color: var(--bg-primary);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.grid-size-control input[type="number"]:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.grid-size-control .field-help {
+  font-size: 11px;
+  color: var(--text-muted);
+}
