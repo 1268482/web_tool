@@ -6,10 +6,13 @@
 class SPSLevelEditor {
   constructor() {
     // 1. Initial State
-    this.gridSize = 10;
+    this.gridWidth = 10;
+    this.gridHeight = 10;
     this.gridData = {}; // Format: { "C3": { type: "stone", moveValue: 1, text: "", assignedObject: "none", metadata: {} } }
     
     this.activeTool = 'select'; // 'select', 'stone', 'paper', 'scissor', 'house1', 'house2', 'house3', 'letter', 'eraser', 'move1', 'move2', 'move3'
+    this.multiSelectMode = false; // toggle for multi-select
+    this.selectedTiles = new Set(); // store selected coordinates
     this.selectedCellCoord = null;
     this.clipboardData = null; // Copy-paste clipboard buffer
     
@@ -78,7 +81,11 @@ class SPSLevelEditor {
       // Global Level settings
       levelName: document.getElementById('level-name'),
       levelDifficulty: document.getElementById('level-difficulty'),
-      levelDesc: document.getElementById('level-desc')
+      levelDesc: document.getElementById('level-desc'),
+      gridWidth: document.getElementById('grid-width'),
+      gridHeight: document.getElementById('grid-height'),
+      colHeaders: document.getElementById('col-headers'),
+      rowHeaders: document.getElementById('row-headers')
     };
 
     // 3. Bootstrap Application
@@ -92,14 +99,55 @@ class SPSLevelEditor {
     this.loadFromLocalStorage(true); // Load saved work if exists
   }
 
+  // --- GRID SIZE HELPERS ---
+  getColChar(index) {
+    return String.fromCharCode(65 + index);
+  }
+
+  getColIndexFromCoord(coord) {
+    const colChar = coord.match(/^[A-Z]+/)[0];
+    return colChar.charCodeAt(0) - 65;
+  }
+
+  getRowFromCoord(coord) {
+    const rowStr = coord.match(/\d+$/)[0];
+    return parseInt(rowStr, 10);
+  }
+
   // --- GRID CREATION ---
   generateGridDOM() {
     this.dom.grid.innerHTML = '';
-    const cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+    this.dom.colHeaders.innerHTML = '';
+    this.dom.rowHeaders.innerHTML = '';
 
-    for (let r = 1; r <= this.gridSize; r++) {
-      for (let c = 0; c < this.gridSize; c++) {
-        const coord = `${cols[c]}${r}`;
+    // Generate column headers
+    const corner = document.createElement('div');
+    corner.className = 'corner-header';
+    this.dom.colHeaders.appendChild(corner);
+
+    for (let c = 0; c < this.gridWidth; c++) {
+      const colHeader = document.createElement('div');
+      colHeader.className = 'col-header';
+      colHeader.textContent = this.getColChar(c);
+      this.dom.colHeaders.appendChild(colHeader);
+    }
+
+    // Generate row headers
+    for (let r = 1; r <= this.gridHeight; r++) {
+      const rowHeader = document.createElement('div');
+      rowHeader.className = 'row-header';
+      rowHeader.textContent = r;
+      this.dom.rowHeaders.appendChild(rowHeader);
+    }
+
+    // Set dynamic columns and rows layout styles
+    this.dom.grid.style.gridTemplateColumns = `repeat(${this.gridWidth}, 60px)`;
+    this.dom.grid.style.gridTemplateRows = `repeat(${this.gridHeight}, 60px)`;
+
+    // Generate cells
+    for (let r = 1; r <= this.gridHeight; r++) {
+      for (let c = 0; c < this.gridWidth; c++) {
+        const coord = `${this.getColChar(c)}${r}`;
         const cell = document.createElement('div');
         cell.className = 'grid-cell';
         cell.setAttribute('data-coord', coord);
@@ -114,10 +162,86 @@ class SPSLevelEditor {
     }
   }
 
+  handleGridResizeInput() {
+    let newWidth = parseInt(this.dom.gridWidth.value, 10);
+    let newHeight = parseInt(this.dom.gridHeight.value, 10);
+
+    // Validate bounds
+    if (isNaN(newWidth) || newWidth < 3) newWidth = 3;
+    if (newWidth > 20) newWidth = 20;
+    if (isNaN(newHeight) || newHeight < 3) newHeight = 3;
+    if (newHeight > 20) newHeight = 20;
+
+    // Apply sanitization to inputs
+    this.dom.gridWidth.value = newWidth;
+    this.dom.gridHeight.value = newHeight;
+
+    if (newWidth === this.gridWidth && newHeight === this.gridHeight) {
+      return; // No change
+    }
+
+    // Check if any placed objects will be cropped
+    const outOfBoundsCells = [];
+    Object.keys(this.gridData).forEach(coord => {
+      const colIndex = this.getColIndexFromCoord(coord);
+      const rowIndex = this.getRowFromCoord(coord);
+      if (colIndex >= newWidth || rowIndex > newHeight) {
+        outOfBoundsCells.push(coord);
+      }
+    });
+
+    if (outOfBoundsCells.length > 0) {
+      const confirmResize = confirm(
+        `Shrinking the grid will delete ${outOfBoundsCells.length} placed object(s) outside the new boundaries (${outOfBoundsCells.join(', ')}). Do you want to proceed?`
+      );
+      if (!confirmResize) {
+        // Revert inputs to current values
+        this.dom.gridWidth.value = this.gridWidth;
+        this.dom.gridHeight.value = this.gridHeight;
+        return;
+      }
+    }
+
+    // Apply resize
+    this.saveHistoryState();
+
+    // Delete out of bound items
+    outOfBoundsCells.forEach(coord => {
+      delete this.gridData[coord];
+    });
+
+    this.gridWidth = newWidth;
+    this.gridHeight = newHeight;
+
+    // Re-render layout
+    this.generateGridDOM();
+    
+    // Rerender all remaining cells
+    Object.keys(this.gridData).forEach(coord => {
+      this.renderCell(coord);
+    });
+
+    // Check if selected cell coordinate is now out of bounds
+    if (this.selectedCellCoord) {
+      const selCol = this.getColIndexFromCoord(this.selectedCellCoord);
+      const selRow = this.getRowFromCoord(this.selectedCellCoord);
+      if (selCol >= this.gridWidth || selRow > this.gridHeight) {
+        this.clearPropertiesPanel();
+      } else {
+        this.selectCell(this.selectedCellCoord);
+      }
+    }
+  }
+
   // --- EVENT BINDINGS ---
   setupEventListeners() {
     // Tool Selection Bindings
     document.querySelectorAll('.btn-tool').forEach(btn => {
+      // Multi-Select toggle button
+      if (btn.id === 'multi-select-toggle') {
+        btn.addEventListener('click', () => this.toggleMultiSelectMode());
+        return;
+      }
       btn.addEventListener('click', (e) => {
         const toolBtn = e.currentTarget;
         this.selectTool(toolBtn.getAttribute('data-tool'));
@@ -129,6 +253,29 @@ class SPSLevelEditor {
         e.dataTransfer.setData('text/plain', tool);
         e.dataTransfer.effectAllowed = 'copy';
       });
+    });
+
+    // Paint / Drag Selection / Placement handlers
+    this.isMouseDown = false;
+    this.hasSavedHistoryForDrag = false;
+
+    this.dom.grid.addEventListener('mousedown', (e) => {
+      const cell = e.target.closest('.grid-cell');
+      if (!cell) return;
+      this.isMouseDown = true;
+      this.handleCellMouseDown(cell, e);
+    });
+
+    this.dom.grid.addEventListener('mouseover', (e) => {
+      const cell = e.target.closest('.grid-cell');
+      if (!cell) return;
+      if (this.isMouseDown) {
+        this.handleCellMouseDragOver(cell, e);
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      this.isMouseDown = false;
     });
 
     // Grid Cell Click Actions
@@ -152,12 +299,26 @@ class SPSLevelEditor {
     this.dom.btnLoad.addEventListener('click', () => this.actionLoadDraft());
     this.dom.btnExport.addEventListener('click', () => this.actionExportJSON());
     
+    // Grid size input event listeners
+    this.dom.gridWidth.addEventListener('change', () => this.handleGridResizeInput());
+    this.dom.gridHeight.addEventListener('change', () => this.handleGridResizeInput());
+
     // JSON file Import trigger setup
     this.dom.btnImportTrigger.addEventListener('click', () => this.dom.fileImport.click());
     this.dom.fileImport.addEventListener('change', (e) => this.handleFileImport(e));
 
     // Global Key Listener for shortcuts
-    document.addEventListener('keydown', (e) => this.handleKeyboardShortcuts(e));
+    document.addEventListener('keydown', (e) => {
+      this.handleKeyboardShortcuts(e);
+      // Shortcut for Multi-Select toggle
+      if (e.key.toLowerCase() === 'm') {
+        const activeEl = document.activeElement;
+        if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT') {
+          return;
+        }
+        this.toggleMultiSelectMode();
+      }
+    });
   }
 
   // --- TOOLBAR ENGINE ---
@@ -177,6 +338,49 @@ class SPSLevelEditor {
         btn.classList.remove('active');
       }
     });
+
+    // Apply tool to multiple selected tiles immediately if any selected
+    if (this.selectedTiles.size > 0 && toolName !== 'select' && !toolName.startsWith('move')) {
+      this.saveHistoryState();
+      for (let coord of this.selectedTiles) {
+        if (toolName === 'eraser') {
+          delete this.gridData[coord];
+          this.renderCell(coord);
+          if (this.selectedCellCoord === coord) {
+            this.clearPropertiesPanel();
+          }
+        } else {
+          // Check houses limit
+          if (toolName.startsWith('house')) {
+            const check = this.validateHouseLimit(toolName, coord);
+            if (!check) continue;
+          }
+          let defaultMove = 0;
+          if (['stone', 'paper', 'scissor'].includes(toolName)) {
+            defaultMove = 1;
+          }
+          this.gridData[coord] = {
+            type: toolName,
+            moveValue: defaultMove,
+            assignedObject: 'none',
+            text: '',
+            metadata: {}
+          };
+          this.renderCell(coord);
+        }
+      }
+      
+      // If it is the letter tool, start inline edit on the first cell in selection
+      if (toolName === 'letter') {
+        const firstCoord = this.selectedTiles.values().next().value;
+        this.selectCell(firstCoord);
+        this.startInlineEdit(firstCoord);
+      } else {
+        this.clearPropertiesPanel();
+      }
+      this.clearSelection();
+      return;
+    }
 
     // Contextual behavior if Select tool is chosen
     if (toolName === 'select' && this.selectedCellCoord) {
@@ -212,6 +416,104 @@ class SPSLevelEditor {
     }
   }
 
+  toggleMultiSelectMode() {
+    this.multiSelectMode = !this.multiSelectMode;
+    const btn = document.getElementById('multi-select-toggle');
+    if (btn) {
+      if (this.multiSelectMode) {
+        btn.classList.add('active');
+        // Unselect active tool if it's select to show active state on toggle
+        this.selectTool('select');
+      } else {
+        btn.classList.remove('active');
+        this.clearSelection();
+      }
+    }
+  }
+
+  handleCellMouseDown(cell, e) {
+    const coord = cell.getAttribute('data-coord');
+    this.hasSavedHistoryForDrag = false;
+
+    if (this.multiSelectMode || e.shiftKey) {
+      if (this.selectedTiles.has(coord)) {
+        this.selectedTiles.delete(coord);
+        cell.classList.remove('selected');
+      } else {
+        this.selectedTiles.add(coord);
+        cell.classList.add('selected');
+      }
+      return;
+    }
+
+    // Normal placement drag start
+    if (['stone', 'paper', 'scissor', 'eraser'].includes(this.activeTool)) {
+      if (this.activeTool === 'eraser') {
+        this.deleteCellElementDrag(coord);
+      } else {
+        this.placeElementDrag(coord, this.activeTool);
+      }
+    }
+  }
+
+  handleCellMouseDragOver(cell, e) {
+    const coord = cell.getAttribute('data-coord');
+
+    if (this.multiSelectMode || e.shiftKey) {
+      if (!this.selectedTiles.has(coord)) {
+        this.selectedTiles.add(coord);
+        cell.classList.add('selected');
+      }
+      return;
+    }
+
+    if (['stone', 'paper', 'scissor', 'eraser'].includes(this.activeTool)) {
+      if (this.activeTool === 'eraser') {
+        this.deleteCellElementDrag(coord);
+      } else {
+        this.placeElementDrag(coord, this.activeTool);
+      }
+    }
+  }
+
+  placeElementDrag(coord, toolType) {
+    if (!this.hasSavedHistoryForDrag) {
+      this.saveHistoryState();
+      this.hasSavedHistoryForDrag = true;
+    }
+
+    let defaultMove = 0;
+    if (['stone', 'paper', 'scissor'].includes(toolType)) {
+      defaultMove = 1;
+    }
+
+    this.gridData[coord] = {
+      type: toolType,
+      moveValue: defaultMove,
+      assignedObject: 'none',
+      text: '',
+      metadata: {}
+    };
+
+    this.renderCell(coord);
+  }
+
+  deleteCellElementDrag(coord) {
+    if (!this.gridData[coord]) return;
+
+    if (!this.hasSavedHistoryForDrag) {
+      this.saveHistoryState();
+      this.hasSavedHistoryForDrag = true;
+    }
+
+    delete this.gridData[coord];
+    this.renderCell(coord);
+
+    if (this.selectedCellCoord === coord) {
+      this.clearPropertiesPanel();
+    }
+  }
+
   // --- DYNAMIC INTERACTION: CELL CLICK HANDLER ---
   handleCellClick(cell) {
     // If the cell contains an active inline input, let the input keep focus and ignore the click
@@ -224,6 +526,18 @@ class SPSLevelEditor {
     // If movement execution is active and clicked cell is a valid destination highlight
     if (this.activeTool.startsWith('move') && cell.classList.contains('valid-move-target')) {
       this.executeMovement(this.activeMoveOrigin, coord);
+      return;
+    }
+
+    // In multi-select mode (or shift clicked), handle click toggle selection
+    if (this.multiSelectMode) {
+      if (this.selectedTiles.has(coord)) {
+        this.selectedTiles.delete(coord);
+        cell.classList.remove('selected');
+      } else {
+        this.selectedTiles.add(coord);
+        cell.classList.add('selected');
+      }
       return;
     }
 
@@ -318,15 +632,13 @@ class SPSLevelEditor {
       { r: -step, c: -step }  // Up-Left
     ];
 
-    const cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-
     offsets.forEach(offset => {
       const targetRow = startRow + offset.r;
       const targetCol = startCol + offset.c;
 
       // Bounds validation
-      if (targetRow >= 1 && targetRow <= this.gridSize && targetCol >= 0 && targetCol < this.gridSize) {
-        const targetCoord = `${cols[targetCol]}${targetRow}`;
+      if (targetRow >= 1 && targetRow <= this.gridHeight && targetCol >= 0 && targetCol < this.gridWidth) {
+        const targetCoord = `${this.getColChar(targetCol)}${targetRow}`;
         
         // Highlight destination in UI
         const targetCell = document.querySelector(`.grid-cell[data-coord="${targetCoord}"]`);
@@ -439,7 +751,9 @@ class SPSLevelEditor {
       gridData: JSON.parse(JSON.stringify(this.gridData)),
       levelName: this.dom.levelName.value,
       difficulty: this.dom.levelDifficulty.value,
-      description: this.dom.levelDesc.value
+      description: this.dom.levelDesc.value,
+      gridWidth: this.gridWidth,
+      gridHeight: this.gridHeight
     };
 
     this.historyStack.push(stateSnapshot);
@@ -508,17 +822,28 @@ class SPSLevelEditor {
     this.dom.levelDifficulty.value = stateSnapshot.difficulty;
     this.dom.levelDesc.value = stateSnapshot.description;
 
+    this.gridWidth = stateSnapshot.gridWidth || 10;
+    this.gridHeight = stateSnapshot.gridHeight || 10;
+    this.dom.gridWidth.value = this.gridWidth;
+    this.dom.gridHeight.value = this.gridHeight;
+
+    // Regenerate layout structure
+    this.generateGridDOM();
+
     // Refresh complete grid canvas rendering
-    for (let r = 1; r <= this.gridSize; r++) {
-      const cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-      for (let c = 0; c < this.gridSize; c++) {
-        this.renderCell(`${cols[c]}${r}`);
-      }
-    }
+    Object.keys(this.gridData).forEach(coord => {
+      this.renderCell(coord);
+    });
 
     // Refresh active dynamic selection property panels
     if (this.selectedCellCoord) {
-      this.selectCell(this.selectedCellCoord);
+      const selCol = this.getColIndexFromCoord(this.selectedCellCoord);
+      const selRow = this.getRowFromCoord(this.selectedCellCoord);
+      if (selCol >= this.gridWidth || selRow > this.gridHeight) {
+        this.clearPropertiesPanel();
+      } else {
+        this.selectCell(this.selectedCellCoord);
+      }
     }
   }
 
@@ -573,9 +898,16 @@ class SPSLevelEditor {
     // Clear previous cell selection outlines
     document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove('selected'));
     
-    this.selectedCellCoord = coord;
-    const cell = document.querySelector(`.grid-cell[data-coord="${coord}"]`);
-    if (cell) cell.classList.add('selected');
+    // Preserve multi-select state if active
+    if (this.multiSelectMode) {
+      this.selectedTiles.add(coord);
+      const cell = document.querySelector(`.grid-cell[data-coord="${coord}"]`);
+      if (cell) cell.classList.add('selected');
+    } else {
+      this.selectedCellCoord = coord;
+      const cell = document.querySelector(`.grid-cell[data-coord="${coord}"]`);
+      if (cell) cell.classList.add('selected');
+    }
 
     const item = this.gridData[coord];
 
@@ -625,9 +957,18 @@ class SPSLevelEditor {
   clearPropertiesPanel() {
     this.selectedCellCoord = null;
     document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove('selected'));
+    this.clearSelection();
     
     this.dom.propsActive.style.display = 'none';
     this.dom.propsEmpty.style.display = 'flex';
+  }
+
+  clearSelection() {
+    this.selectedTiles.forEach(coord => {
+      const cell = document.querySelector(`.grid-cell[data-coord="${coord}"]`);
+      if (cell) cell.classList.remove('selected');
+    });
+    this.selectedTiles.clear();
   }
 
   handlePropertyTypeChange() {
@@ -710,13 +1051,13 @@ class SPSLevelEditor {
     this.dom.levelDifficulty.value = 'Medium';
     this.dom.levelDesc.value = '';
 
-    // Clear UI Grid Canvas
-    for (let r = 1; r <= this.gridSize; r++) {
-      const cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-      for (let c = 0; c < this.gridSize; c++) {
-        this.renderCell(`${cols[c]}${r}`);
-      }
-    }
+    this.gridWidth = 10;
+    this.gridHeight = 10;
+    this.dom.gridWidth.value = 10;
+    this.dom.gridHeight.value = 10;
+
+    // Regenerate layout structure
+    this.generateGridDOM();
 
     this.clearPropertiesPanel();
     this.selectTool('select');
@@ -729,13 +1070,8 @@ class SPSLevelEditor {
     this.saveHistoryState();
     this.gridData = {};
 
-    // Clear Canvas visual cells
-    for (let r = 1; r <= this.gridSize; r++) {
-      const cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-      for (let c = 0; c < this.gridSize; c++) {
-        this.renderCell(`${cols[c]}${r}`);
-      }
-    }
+    // Regenerate empty layout
+    this.generateGridDOM();
 
     this.clearPropertiesPanel();
   }
@@ -745,6 +1081,8 @@ class SPSLevelEditor {
       levelName: this.dom.levelName.value,
       difficulty: this.dom.levelDifficulty.value,
       description: this.dom.levelDesc.value,
+      gridWidth: this.gridWidth,
+      gridHeight: this.gridHeight,
       grid: this.gridData
     };
 
@@ -789,15 +1127,20 @@ class SPSLevelEditor {
       this.dom.levelDifficulty.value = data.difficulty || 'Medium';
       this.dom.levelDesc.value = data.description || '';
       
+      this.gridWidth = data.gridWidth || 10;
+      this.gridHeight = data.gridHeight || 10;
+      this.dom.gridWidth.value = this.gridWidth;
+      this.dom.gridHeight.value = this.gridHeight;
+
       this.gridData = data.grid || {};
 
+      // Regenerate layout structure
+      this.generateGridDOM();
+
       // Draw all elements on Canvas
-      for (let r = 1; r <= this.gridSize; r++) {
-        const cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-        for (let c = 0; c < this.gridSize; c++) {
-          this.renderCell(`${cols[c]}${r}`);
-        }
-      }
+      Object.keys(this.gridData).forEach(coord => {
+        this.renderCell(coord);
+      });
 
       this.clearPropertiesPanel();
       
@@ -815,6 +1158,8 @@ class SPSLevelEditor {
       levelName: this.dom.levelName.value,
       difficulty: this.dom.levelDifficulty.value,
       description: this.dom.levelDesc.value,
+      gridWidth: this.gridWidth,
+      gridHeight: this.gridHeight,
       grid: this.gridData
     };
 
@@ -846,15 +1191,20 @@ class SPSLevelEditor {
         this.dom.levelDifficulty.value = data.difficulty || 'Medium';
         this.dom.levelDesc.value = data.description || '';
         
+        this.gridWidth = data.gridWidth || 10;
+        this.gridHeight = data.gridHeight || 10;
+        this.dom.gridWidth.value = this.gridWidth;
+        this.dom.gridHeight.value = this.gridHeight;
+
         this.gridData = data.grid || {};
 
+        // Regenerate layout structure
+        this.generateGridDOM();
+
         // Render Canvas
-        for (let r = 1; r <= this.gridSize; r++) {
-          const cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-          for (let c = 0; c < this.gridSize; c++) {
-            this.renderCell(`${cols[c]}${r}`);
-          }
-        }
+        Object.keys(this.gridData).forEach(coord => {
+          this.renderCell(coord);
+        });
 
         this.clearPropertiesPanel();
         this.selectTool('select');
@@ -981,6 +1331,7 @@ class SPSLevelEditor {
     input.type = 'text';
     input.className = 'inline-cell-input';
     input.maxLength = 8;
+    input.setAttribute('autocomplete', 'off');
     input.value = clearAndAppend ? item.text : (item.text || '');
     
     placedObj.appendChild(input);

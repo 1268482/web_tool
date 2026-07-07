@@ -240,6 +240,15 @@
                 </div>
                 <span class="tool-label">Eraser</span>
               </button>
+
+              <button id="multi-select-toggle" class="btn-tool" title="Toggle Multi-Select (M)">
+                <div class="tool-icon select-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="3 3"/>
+                  </svg>
+                </div>
+                <span class="tool-label">Multi-Select</span>
+              </button>
             </div>
           </div>
 
@@ -296,6 +305,7 @@
             <p><kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd> Houses 1-3</p>
             <p><kbd>Ctrl+Z</kbd> Undo</p>
             <p><kbd>Ctrl+Y</kbd> Redo</p>
+            <p><kbd>M</kbd> / <kbd>Shift</kbd> Multi-Select</p>
             <p><kbd>Esc</kbd> Reset Active Tool</p>
           </div>
         </div>
@@ -308,39 +318,16 @@
           <!-- Outer Grid with column coordinates (A-J) and row coordinates (1-10) -->
           <div class="editor-grid-container">
             
-            <!-- Column Coordinates Top (Empty corner cell + A-J) -->
-            <div class="col-headers">
-              <div class="corner-header"></div>
-              <div class="col-header">A</div>
-              <div class="col-header">B</div>
-              <div class="col-header">C</div>
-              <div class="col-header">D</div>
-              <div class="col-header">E</div>
-              <div class="col-header">F</div>
-              <div class="col-header">G</div>
-              <div class="col-header">H</div>
-              <div class="col-header">I</div>
-              <div class="col-header">J</div>
-            </div>
+            <!-- Column Coordinates Top (Empty corner cell + generated headers) -->
+            <div id="col-headers" class="col-headers"></div>
 
             <div class="grid-content-row">
-              <!-- Row Coordinates Left (1-10) -->
-              <div class="row-headers">
-                <div class="row-header">1</div>
-                <div class="row-header">2</div>
-                <div class="row-header">3</div>
-                <div class="row-header">4</div>
-                <div class="row-header">5</div>
-                <div class="row-header">6</div>
-                <div class="row-header">7</div>
-                <div class="row-header">8</div>
-                <div class="row-header">9</div>
-                <div class="row-header">10</div>
-              </div>
+              <!-- Row Coordinates Left (generated headers) -->
+              <div id="row-headers" class="row-headers"></div>
 
-              <!-- Interactive 10x10 Grid -->
+              <!-- Interactive Grid -->
               <div id="editor-grid" class="editor-grid">
-                <!-- Javascript will generate 100 cells dynamically here -->
+                <!-- Javascript will generate cells dynamically here -->
               </div>
             </div>
           </div>
@@ -403,7 +390,7 @@
             <!-- Contextual Letter Setting: Text value -->
             <div id="prop-letter-text-container" class="form-group" style="display: none;">
               <label for="prop-letter-text">Cell Label Text</label>
-              <input type="text" id="prop-letter-text" maxlength="8" placeholder="e.g. Start">
+              <input type="text" id="prop-letter-text" maxlength="8" placeholder="e.g. Start" autocomplete="off">
             </div>
 
             <!-- Contextual Physics Setting: Move value -->
@@ -440,7 +427,22 @@
           <div class="props-form">
             <div class="form-group">
               <label for="level-name">Level Name</label>
-              <input type="text" id="level-name" placeholder="Custom Level 1" value="My Epic Level">
+              <input type="text" id="level-name" placeholder="Custom Level 1" value="My Epic Level" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+              <label>Grid Dimensions</label>
+              <div class="grid-size-inputs" style="display: flex; gap: 8px; align-items: center;">
+                <div style="flex: 1;">
+                  <span class="field-help" style="display: block; margin-bottom: 2px;">Width</span>
+                  <input type="number" id="grid-width" min="3" max="20" value="10" style="width: 100%;">
+                </div>
+                <div style="font-weight: bold; margin-top: 18px; color: var(--text-muted);">×</div>
+                <div style="flex: 1;">
+                  <span class="field-help" style="display: block; margin-bottom: 2px;">Height</span>
+                  <input type="number" id="grid-height" min="3" max="20" value="10" style="width: 100%;">
+                </div>
+              </div>
             </div>
 
             <div class="form-group">

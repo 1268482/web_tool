@@ -769,6 +769,7 @@ kbd {
 
 .form-group select,
 .form-group input[type="text"],
+.form-group input[type="number"],
 .form-group textarea {
   background-color: var(--bg-primary);
   border: 1px solid var(--border-light);
@@ -782,6 +783,7 @@ kbd {
 
 .form-group select:focus,
 .form-group input[type="text"]:focus,
+.form-group input[type="number"]:focus,
 .form-group textarea:focus {
   background-color: var(--bg-secondary);
   border-color: var(--border-focus);
